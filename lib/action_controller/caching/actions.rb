@@ -152,17 +152,21 @@ module ActionController
         end
 
         def around(controller)
+          store_options = @store_options&.deep_dup || {}
+          store_options[:expires_in] = expand_option(controller, store_options[:expires_in]) if store_options[:expires_in]
           cache_layout = expand_option(controller, @cache_layout)
           path_options = expand_option(controller, @cache_path)
           cache_path = ActionCachePath.new(controller, path_options || {})
 
-          body = controller.read_fragment(cache_path.path, @store_options)
+          body = controller.read_fragment(cache_path.path, store_options)
 
-          unless body
+          if body
+            body = body.gsub(/(<input type="hidden" name="#{controller.request_forgery_protection_token}" value=").{88}(" \/>)/i, '\1' + controller.send(:form_authenticity_token) + '\2')
+          else
             controller.action_has_layout = false unless cache_layout
             yield
             controller.action_has_layout = true
-            body = controller._save_fragment(cache_path.path, @store_options)
+            body = controller._save_fragment(cache_path.path, store_options)
           end
 
           body = render_to_string(controller, body) unless cache_layout
