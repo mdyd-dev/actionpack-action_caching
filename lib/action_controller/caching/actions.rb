@@ -183,7 +183,7 @@ module ActionController
           def render_to_string(controller, body)
             controller.render_to_string(html: body.html_safe, layout: true)
 
-            controller.render_to_string(html: body.html_safe, layout: controller.send(:page) ? controller.send(:page).layout_name.presence : true)
+            controller.render_to_string(html: body.html_safe, layout: controller.send(:page) ? controller.send(:page).layout.presence : true)
           end
         end
 
